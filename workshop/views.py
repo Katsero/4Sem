@@ -17,14 +17,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     User, Category, Service, Product, Appointment,
     Cart, CartItem, Order, OrderItem,
-    Favorite, Review,
+    Favorite, Review, SiteSettings,
 )
 from .serializers import (
     UserSerializer, UserAdminSerializer,
     CategorySerializer, ServiceSerializer, ProductSerializer,
     AppointmentSerializer, CartSerializer, CartItemSerializer,
     OrderSerializer, OrderItemSerializer,
-    FavoriteSerializer, ReviewSerializer,
+    FavoriteSerializer, ReviewSerializer, SiteSettingsSerializer,
 )
 from .filters import (
     ServiceFilter, ProductFilter, AppointmentFilter, OrderFilter, ReviewFilter,
@@ -32,6 +32,7 @@ from .filters import (
 from .permissions import IsAdminOrReadOnly, IsAdminUser, IsOwnerOrAdmin
 from .forms import AppointmentForm, CheckoutForm, SignUpForm
 from django.urls import reverse
+from django.db.models import Sum
 
 
 # ==================== API ViewSets ====================
@@ -330,6 +331,25 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return Response(ReviewSerializer(review, context={'request': request}).data)
 
 
+class SiteSettingsViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    def list(self, request):
+        settings = SiteSettings.load()
+        serializer = SiteSettingsSerializer(settings)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get', 'put'], permission_classes=[IsAdminUser])
+    def manage(self, request):
+        settings = SiteSettings.load()
+        if request.method == 'PUT':
+            serializer = SiteSettingsSerializer(settings, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        serializer = SiteSettingsSerializer(settings)
+        return Response(serializer.data)
+    
 
 # ==================== HTML Views ====================
 
@@ -655,3 +675,81 @@ class RegisterView(CreateView):
         user = form.save()
         login(self.request, user)
         return redirect(self.success_url)
+
+
+class AnalyticsViewSet(viewsets.ViewSet):
+    permission_classes = [IsAdminUser]
+
+    @action(detail=False, methods=['get'])
+    def sales_report(self, request):
+        """Отчёт о продажах: общая сумма, количество заказов, средний чек."""
+        orders = Order.objects.all()
+        total_revenue = orders.aggregate(total=Sum('total_amount'))['total'] or 0
+        orders_count = orders.count()
+        avg_check = total_revenue / orders_count if orders_count > 0 else 0
+        
+        return Response({
+            'total_revenue': float(total_revenue),
+            'orders_count': orders_count,
+            'average_check': round(float(avg_check), 2),
+        })
+
+    @action(detail=False, methods=['get'])
+    def popular_services(self, request):
+        """Популярные услуги по количеству записей."""
+        from django.db.models import Count
+        services = Service.objects.annotate(
+            bookings_count=Count('appointments')
+        ).order_by('-bookings_count')[:10]
+        
+        result = [
+            {
+                'id': s.id,
+                'name': s.name,
+                'bookings_count': s.bookings_count,
+                'price': float(s.price),
+            }
+            for s in services
+        ]
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def popular_products(self, request):
+        """Популярные товары по количеству продаж."""
+        from django.db.models import Count
+        products = Product.objects.annotate(
+            sales_count=Count('orderitem')
+        ).order_by('-sales_count')[:10]
+        
+        result = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'sales_count': p.sales_count,
+                'price': float(p.price),
+                'stock': p.stock,
+            }
+            for p in products
+        ]
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def user_activity(self, request):
+        """Активность пользователей: заказы, записи, отзывы."""
+        users = User.objects.annotate(
+            orders_count=Count('orders', distinct=True),
+            appointments_count=Count('appointments', distinct=True),
+            reviews_count=Count('reviews', distinct=True),
+        ).order_by('-orders_count')[:20]
+        
+        result = [
+            {
+                'id': u.id,
+                'username': u.username,
+                'orders_count': u.orders_count,
+                'appointments_count': u.appointments_count,
+                'reviews_count': u.reviews_count,
+            }
+            for u in users
+        ]
+        return Response(result)

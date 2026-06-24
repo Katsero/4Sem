@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from .models import (
     Category, Service, Product, Appointment,
     Cart, CartItem, Order, OrderItem,
-    Favorite, Review,
+    Favorite, Review, SiteSettings,
 )
 
 User = get_user_model()
@@ -251,3 +251,11 @@ class ReviewSerializer(serializers.ModelSerializer):
             instance.pk = self.instance.pk
         instance.clean()
         return attrs
+    
+class SiteSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteSettings
+        fields = [
+            'company_name', 'description', 'phone',
+            'email', 'address', 'privacy_policy',
+        ]

@@ -8,7 +8,7 @@ import random
 from workshop.models import (
     Category, Service, Product, Appointment,
     Cart, CartItem, Order, OrderItem,
-    Review, Favorite,
+    Review, Favorite, SiteSettings,
 )
 
 User = get_user_model()
@@ -419,6 +419,17 @@ class Command(BaseCommand):
             order.recalculate_total()
             order.save()
         
+        # Создание настроек сайта
+        self.stdout.write('Создание настроек сайта...')
+        SiteSettings.objects.create(
+            company_name='Tuning Atelier',
+            description='Профессиональное тюнинг-ателье. Работаем с 2010 года. Гарантия на все виды работ.',
+            phone='+7 (495) 123-45-67',
+            email='info@tuning-atelier.ru',
+            address='г. Москва, ул. Автомобильная, д. 15',
+            privacy_policy='Мы не передаём ваши данные третьим лицам. Все персональные данные обрабатываются в соответствии с ФЗ-152.',
+        )
+        
         self.stdout.write(self.style.SUCCESS('БД успешно заполнена тестовыми данными!'))
         self.stdout.write(f'Создано категорий: {Category.objects.count()}')
         self.stdout.write(f'Создано услуг: {Service.objects.count()}')
@@ -427,3 +438,4 @@ class Command(BaseCommand):
         self.stdout.write(f'Создано отзывов: {Review.objects.count()}')
         self.stdout.write(f'Создано записей: {Appointment.objects.count()}')
         self.stdout.write(f'Создано заказов: {Order.objects.count()}')
+        self.stdout.write(f'Создано настроек: {SiteSettings.objects.count()}')

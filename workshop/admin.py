@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import (
     User, Category, Service, Product, Appointment,
     Cart, CartItem, Order, OrderItem,
-    Favorite, Review,
+    Favorite, Review, SiteSettings,
 )
 
 
@@ -100,6 +100,15 @@ class ReviewAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at']
     list_editable = ['is_approved']
 
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ['company_name', 'phone', 'email']
+    
+    def has_add_permission(self, request):
+        return not SiteSettings.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 admin.site.site_header = 'Tuning Atelier Administration'
 admin.site.site_title = 'Tuning Atelier Admin'
