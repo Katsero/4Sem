@@ -21,6 +21,7 @@ urlpatterns = [
     path('checkout/', views.CheckoutView.as_view(), name='checkout'),
     
     path('appointment/', views.AppointmentView.as_view(), name='appointment'),
+    path('appointment/<int:service_id>/', views.AppointmentView.as_view(), name='appointment_service'),
     path('appointment/create/', views.create_appointment, name='create_appointment'),
     
     path('profile/', views.ProfileView.as_view(), name='profile'),

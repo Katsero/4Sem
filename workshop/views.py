@@ -513,9 +513,13 @@ class CheckoutView(LoginRequiredMixin, View):
 
 
 class AppointmentView(LoginRequiredMixin, View):
-    def get(self, request):
+    def get(self, request, service_id=None):
         services = Service.objects.filter(is_active=True)
-        return render(request, 'appointment.html', {'services': services, 'form': AppointmentForm()})
+        initial = {}
+        if service_id:
+            initial['service'] = service_id
+        form = AppointmentForm(initial=initial)
+        return render(request, 'appointment.html', {'services': services, 'form': form})
 
 
 def create_appointment(request):

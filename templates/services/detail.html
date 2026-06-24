@@ -7,7 +7,7 @@
         <p>Длительность: {{ service.duration_minutes }} мин.</p>
         <p class="price">{{ service.get_formatted_price }}</p>
         <p style="margin:1rem 0;">{{ service.description }}</p>
-        <a href="{% url 'workshop:appointment' %}" class="btn">Записаться</a>
+        <a href="{% url 'workshop:appointment_service' service.pk %}" class="btn">Записаться</a>
     </div>
     <h2 style="margin:2rem 0 1rem;">Отзывы ({{ reviews|length }})</h2>
     {% for review in reviews %}
