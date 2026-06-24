@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ service.name }}{% endblock %}
+{% block content %}
+    <div class="card">
+        <h1>{{ service.name }}</h1>
+        <p>Категория: {{ service.category.name }}</p>
+        <p>Длительность: {{ service.duration_minutes }} мин.</p>
+        <p class="price">{{ service.get_formatted_price }}</p>
+        <p style="margin:1rem 0;">{{ service.description }}</p>
+        <a href="{% url 'workshop:appointment' %}" class="btn">Записаться</a>
+    </div>
+    <h2 style="margin:2rem 0 1rem;">Отзывы ({{ reviews|length }})</h2>
+    {% for review in reviews %}
+        <div class="card" style="margin-bottom:1rem;">
+            <p><strong>{{ review.user.username }}</strong> — {{ review.rating }}/5</p>
+            <p>{{ review.text }}</p>
+        </div>
+    {% empty %}
+        <p>Отзывов пока нет.</p>
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+    <div class="card">
+        <h1>{{ product.name }}</h1>
+        <p>Категория: {{ product.category.name }}</p>
+        <p>Производитель: {{ product.manufacturer|default:"—" }}</p>
+        <p>Остаток: {{ product.stock }} шт.</p>
+        <p class="price">{{ product.get_formatted_price }}</p>
+        <p style="margin:1rem 0;">{{ product.description }}</p>
+        {% if product.stock > 0 %}
+            <a href="{% url 'workshop:add_to_cart' product.pk %}" class="btn">В корзину</a>
+        {% else %}
+            <p style="color:red;">Нет в наличии</p>
+        {% endif %}
+    </div>
+    <h2 style="margin:2rem 0 1rem;">Отзывы</h2>
+    {% for review in reviews %}
+        <div class="card" style="margin-bottom:1rem;">
+            <p><strong>{{ review.user.username }}</strong> — {{ review.rating }}/5</p>
+            <p>{{ review.text }}</p>
+        </div>
+    {% empty %}
+        <p>Отзывов пока нет.</p>
+    {% endfor %}
+{% endblock %}

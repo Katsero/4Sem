@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Мои заказы{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Мои заказы</h1>
+    {% if orders %}
+        <table>
+            <thead><tr><th>№</th><th>Дата</th><th>Сумма</th><th>Статус</th><th>Товары</th></tr></thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.pk }}</td>
+                        <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ order.total_amount }} ₽</td>
+                        <td>{{ order.get_status_display }}</td>
+                        <td>
+                            {% for item in order.items.all %}
+                                {{ item.product.name }} × {{ item.quantity }}<br>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У вас пока нет заказов.</p>
+    {% endif %}
+{% endblock %}

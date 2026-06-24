@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Личный кабинет{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Личный кабинет</h1>
+    <div class="card">
+        <p><strong>Имя:</strong> {{ user.get_full_name|default:user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Телефон:</strong> {{ user.phone|default:"—" }}</p>
+        <p><strong>Роль:</strong> {{ user.get_role_display }}</p>
+    </div>
+    <div style="margin-top:2rem;">
+        <a href="{% url 'workshop:order_list' %}" class="btn">Мои заказы ({{ orders_count }})</a>
+        <a href="{% url 'workshop:user_appointment_list' %}" class="btn">Мои записи ({{ appointments_count }})</a>
+    </div>
+{% endblock %}

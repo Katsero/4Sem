@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Товары{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Каталог товаров</h1>
+    <form class="filter-bar" method="get">
+        <select name="category">
+            <option value="">Все категории</option>
+            {% for cat in categories %}
+                <option value="{{ cat.pk }}" {% if request.GET.category == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="number" name="min_price" placeholder="Цена от" value="{{ request.GET.min_price }}">
+        <input type="number" name="max_price" placeholder="Цена до" value="{{ request.GET.max_price }}">
+        <label><input type="checkbox" name="in_stock" value="1" {% if request.GET.in_stock %}checked{% endif %}> Только в наличии</label>
+        <button type="submit" class="btn">Фильтровать</button>
+    </form>
+    <div class="grid">
+        {% for product in products %}
+            <div class="card">
+                <h3>{{ product.name }}</h3>
+                <p>Категория: {{ product.category.name }}</p>
+                <p>Остаток: {{ product.stock }} шт.</p>
+                <p class="price">{{ product.get_formatted_price }}</p>
+                <a href="{% url 'workshop:product_detail' product.pk %}" class="btn">Подробнее</a>
+                <a href="{% url 'workshop:add_to_cart' product.pk %}" class="btn">В корзину</a>
+            </div>
+        {% empty %}
+            <p>Товары не найдены.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

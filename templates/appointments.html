@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Мои записи{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Мои записи на услуги</h1>
+    {% if appointments %}
+        <table>
+            <thead><tr><th>Услуга</th><th>Дата и время</th><th>Статус</th><th>Комментарий</th></tr></thead>
+            <tbody>
+                {% for appt in appointments %}
+                    <tr>
+                        <td>{{ appt.service.name }}</td>
+                        <td>{{ appt.appointment_datetime|date:"d.m.Y H:i" }}</td>
+                        <td>{{ appt.get_status_display }}</td>
+                        <td>{{ appt.note|default:"—" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>У вас пока нет записей.</p>
+    {% endif %}
+{% endblock %}

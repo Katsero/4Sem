@@ -1,9 +1,15 @@
-from django.db.models import Avg, Count, Q, F
-from django.shortcuts import get_object_or_404
+from django.db.models import Avg, Count, Q
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth import login
+from django.views.generic import TemplateView, ListView, DetailView, View, CreateView
+from django.contrib import messages
+
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import (
@@ -22,7 +28,10 @@ from .filters import (
     ServiceFilter, ProductFilter, AppointmentFilter, OrderFilter, ReviewFilter,
 )
 from .permissions import IsAdminOrReadOnly, IsAdminUser, IsOwnerOrAdmin
+from .forms import AppointmentForm, CheckoutForm, SignUpForm
 
+
+# ==================== API ViewSets ====================
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
@@ -31,7 +40,6 @@ class UserViewSet(viewsets.ModelViewSet):
     ordering_fields = ['date_joined', 'username']
 
     def get_queryset(self):
-        # Аннотации: количество заказов и записей у каждого пользователя
         return User.objects.annotate(
             orders_count=Count('orders', distinct=True),
             appointments_count=Count('appointments', distinct=True),
@@ -83,9 +91,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'description']
     filterset_fields = ['category_type']
 
-    def get_queryset(self):
-        return Category.objects.all()
-
 
 class ServiceViewSet(viewsets.ModelViewSet):
     serializer_class = ServiceSerializer
@@ -100,8 +105,6 @@ class ServiceViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
     def get_queryset(self):
-        # select_related: услуга → категория (одним SQL-запросом)
-        # annotate: средний рейтинг + количество добавлений в избранное
         return Service.objects.select_related('category').annotate(
             avg_rating=Avg('reviews__rating', filter=Q(reviews__is_approved=True)),
             favorites_count=Count('favorites', distinct=True),
@@ -121,8 +124,6 @@ class ProductViewSet(viewsets.ModelViewSet):
         return [AllowAny()]
 
     def get_queryset(self):
-        # select_related: товар → категория
-        # annotate: средний рейтинг + избранное
         return Product.objects.select_related('category').annotate(
             avg_rating=Avg('reviews__rating', filter=Q(reviews__is_approved=True)),
             favorites_count=Count('favorites', distinct=True),
@@ -137,7 +138,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     ordering_fields = ['appointment_datetime', 'created_at']
 
     def get_queryset(self):
-        # select_related: запись → пользователь + услуга → категория
         qs = Appointment.objects.select_related('user', 'service', 'service__category')
         if self.request.user.is_admin:
             return qs
@@ -151,7 +151,6 @@ class CartViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
-        # select_related + prefetch_related для корзины и её позиций
         cart, _ = Cart.objects.select_related('user').prefetch_related(
             'items__product', 'items__product__category'
         ).get_or_create(user=request.user)
@@ -210,7 +209,6 @@ class OrderViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'total_amount']
 
     def get_queryset(self):
-        # select_related: заказ → пользователь
         qs = Order.objects.select_related('user').prefetch_related('items__product')
         if self.request.user.is_admin:
             return qs
@@ -220,13 +218,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
         items = cart.items.select_related('product').all()
         if not items.exists():
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError({'cart': 'Корзина пуста.'})
+            raise DRFValidationError({'cart': 'Корзина пуста.'})
 
         for item in items:
             if item.quantity > item.product.stock:
-                from rest_framework.exceptions import ValidationError
-                raise ValidationError(
+                raise DRFValidationError(
                     {'product': f'Недостаточно "{item.product.name}" на складе.'}
                 )
 
@@ -261,7 +257,10 @@ class OrderViewSet(viewsets.ModelViewSet):
     def cancel(self, request, pk=None):
         order = self.get_object()
         if order.status in ['shipped', 'completed']:
-            return Response({'error': 'Нельзя отменить отправленный/завершённый заказ.'}, status=400)
+            return Response(
+                {'error': 'Нельзя отменить отправленный/завершённый заказ.'},
+                status=400,
+            )
 
         for item in order.items.select_related('product').all():
             item.product.stock += item.quantity
@@ -277,7 +276,6 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
 
     def get_queryset(self):
-        # select_related: избранное → пользователь, услуга, товар
         qs = Favorite.objects.select_related('user', 'service', 'product')
         if self.request.user.is_admin:
             return qs
@@ -299,7 +297,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        # select_related: отзыв → пользователь, услуга, товар
         return Review.objects.select_related('user', 'service', 'product')
 
     def perform_create(self, serializer):
@@ -338,3 +335,239 @@ class SiteSettingsViewSet(viewsets.ViewSet):
             return Response(serializer.data)
         serializer = SiteSettingsSerializer(settings)
         return Response(serializer.data)
+
+
+# ==================== HTML Views ====================
+
+class HomeView(TemplateView):
+    template_name = 'home.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['services'] = Service.objects.filter(is_active=True)[:6]
+        context['products'] = Product.objects.filter(is_active=True, stock__gt=0)[:6]
+        context['categories'] = Category.objects.all()
+        return context
+
+
+class ServiceListView(ListView):
+    model = Service
+    template_name = 'services/list.html'
+    context_object_name = 'services'
+    paginate_by = 12
+
+    def get_queryset(self):
+        qs = Service.objects.filter(is_active=True).select_related('category')
+        category = self.request.GET.get('category')
+        if category:
+            qs = qs.filter(category_id=category)
+        min_price = self.request.GET.get('min_price')
+        if min_price:
+            qs = qs.filter(price__gte=min_price)
+        max_price = self.request.GET.get('max_price')
+        if max_price:
+            qs = qs.filter(price__lte=max_price)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.filter(category_type='service')
+        return context
+
+
+class ServiceDetailView(DetailView):
+    model = Service
+    template_name = 'services/detail.html'
+    context_object_name = 'service'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reviews'] = self.object.reviews.filter(is_approved=True)
+        context['avg_rating'] = self.object.reviews.filter(is_approved=True).aggregate(
+            avg=Avg('rating')
+        )['avg'] or 0
+        return context
+
+
+class ProductListView(ListView):
+    model = Product
+    template_name = 'products/list.html'
+    context_object_name = 'products'
+    paginate_by = 12
+
+    def get_queryset(self):
+        qs = Product.objects.filter(is_active=True).select_related('category')
+        category = self.request.GET.get('category')
+        if category:
+            qs = qs.filter(category_id=category)
+        min_price = self.request.GET.get('min_price')
+        if min_price:
+            qs = qs.filter(price__gte=min_price)
+        max_price = self.request.GET.get('max_price')
+        if max_price:
+            qs = qs.filter(price__lte=max_price)
+        in_stock = self.request.GET.get('in_stock')
+        if in_stock:
+            qs = qs.filter(stock__gt=0)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.filter(category_type='product')
+        return context
+
+
+class ProductDetailView(DetailView):
+    model = Product
+    template_name = 'products/detail.html'
+    context_object_name = 'product'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['reviews'] = self.object.reviews.filter(is_approved=True)
+        context['avg_rating'] = self.object.reviews.filter(is_approved=True).aggregate(
+            avg=Avg('rating')
+        )['avg'] or 0
+        return context
+
+
+class CartView(LoginRequiredMixin, View):
+    def get(self, request):
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        items = cart.items.select_related('product').all()
+        return render(request, 'cart.html', {'cart': cart, 'items': items})
+
+
+def add_to_cart(request, product_id):
+    if not request.user.is_authenticated:
+        return redirect('workshop:login')
+    product = get_object_or_404(Product, pk=product_id)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    item, created = CartItem.objects.get_or_create(
+        cart=cart, product=product, defaults={'quantity': 1}
+    )
+    if not created:
+        item.quantity += 1
+    item.save()
+    messages.success(request, f'Товар "{product.name}" добавлен в корзину.')
+    return redirect(request.META.get('HTTP_REFERER', 'workshop:cart'))
+
+
+def remove_from_cart(request, item_id):
+    if not request.user.is_authenticated:
+        return redirect('workshop:login')
+    item = get_object_or_404(CartItem, pk=item_id, cart__user=request.user)
+    item.delete()
+    messages.success(request, 'Товар удалён из корзины.')
+    return redirect('workshop:cart')
+
+
+def update_cart_item(request, item_id):
+    if not request.user.is_authenticated:
+        return redirect('workshop:login')
+    item = get_object_or_404(CartItem, pk=item_id, cart__user=request.user)
+    quantity = int(request.POST.get('quantity', 1))
+    if quantity > 0:
+        item.quantity = quantity
+        item.save()
+    return redirect('workshop:cart')
+
+
+class CheckoutView(LoginRequiredMixin, View):
+    def get(self, request):
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        items = cart.items.select_related('product').all()
+        form = CheckoutForm()
+        return render(request, 'checkout.html', {'cart': cart, 'items': items, 'form': form})
+
+    def post(self, request):
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        items = cart.items.select_related('product').all()
+        if not items.exists():
+            messages.error(request, 'Корзина пуста.')
+            return redirect('workshop:cart')
+
+        form = CheckoutForm(request.POST)
+        if form.is_valid():
+            order = Order.objects.create(
+                user=request.user,
+                address=form.cleaned_data['address'],
+                phone=form.cleaned_data['phone'],
+                payment_method=form.cleaned_data['payment_method'],
+            )
+            for item in items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price_at_purchase=item.product.price,
+                )
+                item.product.stock -= item.quantity
+                item.product.save()
+            order.recalculate_total()
+            order.save()
+            cart.items.all().delete()
+            messages.success(request, f'Заказ #{order.pk} оформлен!')
+            return redirect('workshop:order_list')
+        return render(request, 'checkout.html', {'cart': cart, 'items': items, 'form': form})
+
+
+class AppointmentView(LoginRequiredMixin, View):
+    def get(self, request):
+        services = Service.objects.filter(is_active=True)
+        return render(request, 'appointment.html', {'services': services, 'form': AppointmentForm()})
+
+
+def create_appointment(request):
+    if not request.user.is_authenticated:
+        return redirect('workshop:login')
+    if request.method == 'POST':
+        form = AppointmentForm(request.POST)
+        if form.is_valid():
+            appointment = form.save(commit=False)
+            appointment.user = request.user
+            appointment.save()
+            messages.success(request, 'Запись создана! Ожидайте подтверждения.')
+            return redirect('workshop:user_appointment_list')
+    services = Service.objects.filter(is_active=True)
+    form = AppointmentForm()
+    return render(request, 'appointment.html', {'services': services, 'form': form})
+
+
+class ProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['orders_count'] = self.request.user.orders.count()
+        context['appointments_count'] = self.request.user.appointments.count()
+        return context
+
+
+class OrderListView(LoginRequiredMixin, ListView):
+    model = Order
+    template_name = 'orders.html'
+    context_object_name = 'orders'
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user).prefetch_related('items__product')
+
+
+class UserAppointmentListView(LoginRequiredMixin, ListView):
+    model = Appointment
+    template_name = 'appointments.html'
+    context_object_name = 'appointments'
+
+    def get_queryset(self):
+        return Appointment.objects.filter(user=self.request.user).select_related('service')
+
+
+class RegisterView(CreateView):
+    form_class = SignUpForm
+    template_name = 'registration/register.html'
+    success_url = '/'
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        return redirect(self.success_url)

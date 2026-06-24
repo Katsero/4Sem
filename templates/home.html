@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Главная — Tuning Atelier{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:2rem;">Добро пожаловать в Tuning Atelier!</h1>
+    <h2 style="margin-bottom:1rem;">Популярные услуги</h2>
+    <div class="grid" style="margin-bottom:3rem;">
+        {% for service in services %}
+            <div class="card">
+                <h3>{{ service.name }}</h3>
+                <p>{{ service.description|truncatewords:20 }}</p>
+                <p class="price">{{ service.get_formatted_price }}</p>
+                <a href="{% url 'workshop:service_detail' service.pk %}" class="btn">Подробнее</a>
+            </div>
+        {% endfor %}
+    </div>
+    <h2 style="margin-bottom:1rem;">Товары в наличии</h2>
+    <div class="grid">
+        {% for product in products %}
+            <div class="card">
+                <h3>{{ product.name }}</h3>
+                <p>Остаток: {{ product.stock }} шт.</p>
+                <p class="price">{{ product.get_formatted_price }}</p>
+                <a href="{% url 'workshop:product_detail' product.pk %}" class="btn">Подробнее</a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

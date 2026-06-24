@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Запись на услугу{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Запись на услугу</h1>
+    <form method="post" action="{% url 'workshop:create_appointment' %}" class="card">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Записаться</button>
+    </form>
+{% endblock %}

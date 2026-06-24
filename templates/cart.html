@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Корзина{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Корзина</h1>
+    {% if items %}
+        <table>
+            <thead><tr><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.product.get_formatted_price }}</td>
+                        <td>
+                            <form method="post" action="{% url 'workshop:update_cart_item' item.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" style="width:60px;">
+                                <button type="submit" class="btn btn-secondary">OK</button>
+                            </form>
+                        </td>
+                        <td>{{ item.total_price }} ₽</td>
+                        <td><a href="{% url 'workshop:remove_from_cart' item.pk %}" class="btn btn-secondary">Удалить</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h2 style="margin:1rem 0;">Итого: {{ cart.total_price }} ₽</h2>
+        <a href="{% url 'workshop:checkout' %}" class="btn">Оформить заказ</a>
+    {% else %}
+        <p>Корзина пуста.</p>
+        <a href="{% url 'workshop:product_list' %}" class="btn">Перейти к товарам</a>
+    {% endif %}
+{% endblock %}

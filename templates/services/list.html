@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Услуги{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Каталог услуг</h1>
+    <form class="filter-bar" method="get">
+        <select name="category">
+            <option value="">Все категории</option>
+            {% for cat in categories %}
+                <option value="{{ cat.pk }}" {% if request.GET.category == cat.pk|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="number" name="min_price" placeholder="Цена от" value="{{ request.GET.min_price }}">
+        <input type="number" name="max_price" placeholder="Цена до" value="{{ request.GET.max_price }}">
+        <button type="submit" class="btn">Фильтровать</button>
+    </form>
+    <div class="grid">
+        {% for service in services %}
+            <div class="card">
+                <h3>{{ service.name }}</h3>
+                <p>Категория: {{ service.category.name }}</p>
+                <p>Длительность: {{ service.duration_minutes }} мин.</p>
+                <p class="price">{{ service.get_formatted_price }}</p>
+                <a href="{% url 'workshop:service_detail' service.pk %}" class="btn">Подробнее</a>
+            </div>
+        {% empty %}
+            <p>Услуги не найдены.</p>
+        {% endfor %}
+    </div>
+    {% if is_paginated %}
+        <div style="margin-top:2rem;">
+            {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="btn btn-secondary">Назад</a>{% endif %}
+            {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="btn btn-secondary">Вперёд</a>{% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
