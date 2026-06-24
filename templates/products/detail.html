@@ -13,6 +13,7 @@
         {% else %}
             <p style="color:red;">Нет в наличии</p>
         {% endif %}
+        <a href="{% url 'workshop:toggle_favorite' 'product' product.pk %}" class="btn btn-secondary">В избранное</a>
     </div>
     <h2 style="margin:2rem 0 1rem;">Отзывы</h2>
     {% for review in reviews %}
@@ -23,4 +24,29 @@
     {% empty %}
         <p>Отзывов пока нет.</p>
     {% endfor %}
+    {% if user.is_authenticated %}
+        <h3 style="margin:2rem 0 1rem;">Оставить отзыв</h3>
+        <form method="post" action="{% url 'workshop:create_review' %}" class="card">
+            {% csrf_token %}
+            <input type="hidden" name="target_type" value="product">
+            <input type="hidden" name="product" value="{{ product.pk }}">
+            <div style="margin-bottom:1rem;">
+                <label>Оценка:</label>
+                <select name="rating" required style="width:100%;padding:0.5rem;">
+                    <option value="5">5 - Отлично</option>
+                    <option value="4">4 - Хорошо</option>
+                    <option value="3">3 - Нормально</option>
+                    <option value="2">2 - Плохо</option>
+                    <option value="1">1 - Ужасно</option>
+                </select>
+            </div>
+            <div style="margin-bottom:1rem;">
+                <label>Текст отзыва:</label>
+                <textarea name="text" rows="4" required style="width:100%;padding:0.5rem;border:1px solid #ddd;border-radius:4px;"></textarea>
+            </div>
+            <button type="submit" class="btn">Отправить отзыв</button>
+        </form>
+    {% else %}
+        <p style="margin-top:2rem;"><a href="{% url 'workshop:login' %}">Войдите</a>, чтобы оставить отзыв.</p>
+    {% endif %}
 {% endblock %}

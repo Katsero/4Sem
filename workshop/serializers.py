@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from .models import (
     Category, Service, Product, Appointment,
     Cart, CartItem, Order, OrderItem,
-    Favorite, Review, SiteSettings,
+    Favorite, Review,
 )
 
 User = get_user_model()
@@ -193,6 +193,18 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['user', 'total_amount', 'status']
 
+    def validate_address(self, value):
+        from django.core.validators import RegexValidator
+        from django.core.exceptions import ValidationError
+        import re
+        
+        regex = r'^[а-яА-ЯёЁa-zA-Z\s\-\.,]+,\s*д\.\s*\d+[а-яА-Яa-zA-Z]?(?:,\s*кв\.\s*\d+)?,\s*[а-яА-ЯёЁa-zA-Z\s\-]+,\s*\d{6}$'
+        if not re.match(regex, value):
+            raise serializers.ValidationError(
+                'Адрес должен быть в формате: "ул. Примерная, д. 1, Москва, 101000".'
+            )
+        return value
+
 
 class FavoriteSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True, default=None)
@@ -239,12 +251,3 @@ class ReviewSerializer(serializers.ModelSerializer):
             instance.pk = self.instance.pk
         instance.clean()
         return attrs
-
-
-class SiteSettingsSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SiteSettings
-        fields = [
-            'company_name', 'description', 'phone',
-            'email', 'address', 'privacy_policy',
-        ]

@@ -38,6 +38,7 @@
             <a href="{% url 'workshop:product_list' %}">Товары</a>
             <a href="{% url 'workshop:appointment' %}">Запись</a>
             <a href="{% url 'workshop:cart' %}">Корзина</a>
+            <a href="{% url 'workshop:favorite_list' %}">Избранное</a>
             {% if user.is_authenticated %}
                 <a href="{% url 'workshop:profile' %}">Кабинет</a>
                 <form action="{% url 'workshop:logout' %}" method="post" style="display:inline;">

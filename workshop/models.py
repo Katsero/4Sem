@@ -422,28 +422,3 @@ class Review(models.Model):
             raise ValidationError(_('Отзыв может быть либо к услуге, либо к товару.'))
         if self.rating < 1 or self.rating > 5:
             raise ValidationError({'rating': _('Оценка должна быть от 1 до 5.')})
-
-
-class SiteSettings(models.Model):
-    company_name = models.CharField(max_length=200, default='Tuning Atelier')
-    description = models.TextField(blank=True)
-    phone = models.CharField(max_length=50, blank=True)
-    email = models.EmailField(blank=True)
-    address = models.CharField(max_length=300, blank=True)
-    privacy_policy = models.TextField(blank=True)
-
-    class Meta:
-        verbose_name = _('Настройки сайта')
-        verbose_name_plural = _('Настройки сайта')
-
-    def __str__(self):
-        return self.company_name
-
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super().save(*args, **kwargs)
-
-    @classmethod
-    def load(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj

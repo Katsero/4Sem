@@ -15,20 +15,21 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import (
     User, Category, Service, Product, Appointment,
     Cart, CartItem, Order, OrderItem,
-    Favorite, Review, SiteSettings,
+    Favorite, Review,
 )
 from .serializers import (
     UserSerializer, UserAdminSerializer,
     CategorySerializer, ServiceSerializer, ProductSerializer,
     AppointmentSerializer, CartSerializer, CartItemSerializer,
     OrderSerializer, OrderItemSerializer,
-    FavoriteSerializer, ReviewSerializer, SiteSettingsSerializer,
+    FavoriteSerializer, ReviewSerializer,
 )
 from .filters import (
     ServiceFilter, ProductFilter, AppointmentFilter, OrderFilter, ReviewFilter,
 )
 from .permissions import IsAdminOrReadOnly, IsAdminUser, IsOwnerOrAdmin
 from .forms import AppointmentForm, CheckoutForm, SignUpForm
+from django.urls import reverse
 
 
 # ==================== API ViewSets ====================
@@ -317,25 +318,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return Response(ReviewSerializer(review, context={'request': request}).data)
 
 
-class SiteSettingsViewSet(viewsets.ViewSet):
-    permission_classes = [AllowAny]
-
-    def list(self, request):
-        settings = SiteSettings.load()
-        serializer = SiteSettingsSerializer(settings)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get', 'put'], permission_classes=[IsAdminUser])
-    def manage(self, request):
-        settings = SiteSettings.load()
-        if request.method == 'PUT':
-            serializer = SiteSettingsSerializer(settings, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
-        serializer = SiteSettingsSerializer(settings)
-        return Response(serializer.data)
-
 
 # ==================== HTML Views ====================
 
@@ -536,6 +518,94 @@ def create_appointment(request):
     services = Service.objects.filter(is_active=True)
     form = AppointmentForm()
     return render(request, 'appointment.html', {'services': services, 'form': form})
+
+
+def create_review(request):
+    if not request.user.is_authenticated:
+        return redirect('workshop:login')
+    if request.method == 'POST':
+        target_type = request.POST.get('target_type')
+        service_id = request.POST.get('service')
+        product_id = request.POST.get('product')
+        rating = request.POST.get('rating')
+        text = request.POST.get('text', '').strip()
+
+        if not text or not rating:
+            messages.error(request, 'Заполните все поля.')
+            return redirect(request.META.get('HTTP_REFERER', 'workshop:home'))
+
+        try:
+            rating = int(rating)
+            if rating < 1 or rating > 5:
+                raise ValueError
+        except (ValueError, TypeError):
+            messages.error(request, 'Оценка должна быть от 1 до 5.')
+            return redirect(request.META.get('HTTP_REFERER', 'workshop:home'))
+
+        review = Review(
+            user=request.user,
+            target_type=target_type,
+            rating=rating,
+            text=text,
+            is_approved=False,
+        )
+
+        if target_type == 'service' and service_id:
+            review.service = get_object_or_404(Service, pk=service_id)
+            redirect_url = reverse('workshop:service_detail', kwargs={'pk': service_id})
+        elif target_type == 'product' and product_id:
+            review.product = get_object_or_404(Product, pk=product_id)
+            redirect_url = reverse('workshop:product_detail', kwargs={'pk': product_id})
+        else:
+            messages.error(request, 'Не указан товар или услуга.')
+            return redirect('workshop:home')
+
+        try:
+            review.full_clean()
+            review.save()
+            messages.success(request, 'Отзыв отправлен на модерацию.')
+        except ValidationError as e:
+            messages.error(request, str(e))
+
+        return redirect(redirect_url)
+    return redirect('workshop:home')
+
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def toggle_favorite(request, content_type, object_id):
+    if content_type == 'service':
+        obj = get_object_or_404(Service, pk=object_id)
+        favorite, created = Favorite.objects.get_or_create(
+            user=request.user, service=obj
+        )
+        redirect_url = reverse('workshop:service_detail', kwargs={'pk': object_id})
+    elif content_type == 'product':
+        obj = get_object_or_404(Product, pk=object_id)
+        favorite, created = Favorite.objects.get_or_create(
+            user=request.user, product=obj
+        )
+        redirect_url = reverse('workshop:product_detail', kwargs={'pk': object_id})
+    else:
+        return redirect('workshop:home')
+
+    if not created:
+        favorite.delete()
+        messages.success(request, 'Удалено из избранного.')
+    else:
+        messages.success(request, 'Добавлено в избранное.')
+
+    return redirect(redirect_url)
+
+
+class FavoriteListView(LoginRequiredMixin, ListView):
+    model = Favorite
+    template_name = 'favorites.html'
+    context_object_name = 'favorites'
+
+    def get_queryset(self):
+        return Favorite.objects.filter(user=self.request.user).select_related('service', 'product')
 
 
 class ProfileView(LoginRequiredMixin, TemplateView):

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Избранное{% endblock %}
+{% block content %}
+    <h1 style="margin-bottom:1rem;">Избранное</h1>
+    {% if favorites %}
+        <div class="grid">
+            {% for fav in favorites %}
+                <div class="card">
+                    {% if fav.service %}
+                        <h3>{{ fav.service.name }}</h3>
+                        <p>Услуга: {{ fav.service.get_formatted_price }}</p>
+                        <a href="{% url 'workshop:service_detail' fav.service.pk %}" class="btn">Подробнее</a>
+                        <a href="{% url 'workshop:toggle_favorite' 'service' fav.service.pk %}" class="btn btn-secondary">Удалить</a>
+                    {% else %}
+                        <h3>{{ fav.product.name }}</h3>
+                        <p>Товар: {{ fav.product.get_formatted_price }}</p>
+                        <a href="{% url 'workshop:product_detail' fav.product.pk %}" class="btn">Подробнее</a>
+                        <a href="{% url 'workshop:toggle_favorite' 'product' fav.product.pk %}" class="btn btn-secondary">Удалить</a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>У вас пока нет избранных товаров или услуг.</p>
+    {% endif %}
+{% endblock %}

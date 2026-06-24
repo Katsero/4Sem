@@ -11,5 +11,6 @@
     <div style="margin-top:2rem;">
         <a href="{% url 'workshop:order_list' %}" class="btn">Мои заказы ({{ orders_count }})</a>
         <a href="{% url 'workshop:user_appointment_list' %}" class="btn">Мои записи ({{ appointments_count }})</a>
+        <a href="{% url 'workshop:favorite_list' %}" class="btn">Избранное</a>
     </div>
 {% endblock %}

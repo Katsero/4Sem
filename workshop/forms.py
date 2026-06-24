@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.core.exceptions import ValidationError
+import re
 from .models import User, Appointment, Order
 
 
@@ -33,3 +35,13 @@ class CheckoutForm(forms.Form):
         choices=Order.PAYMENT_CHOICES,
         widget=forms.RadioSelect,
     )
+
+    def clean_address(self):
+        address = self.cleaned_data.get('address', '').strip()
+        regex = r'^[а-яА-ЯёЁa-zA-Z\s\-\.,]+,\s*д\.\s*\d+[а-яА-Яa-zA-Z]?(?:,\s*кв\.\s*\d+)?,\s*[а-яА-ЯёЁa-zA-Z\s\-]+,\s*\d{6}$'
+        if not re.match(regex, address):
+            raise ValidationError(
+                'Адрес должен быть в формате: "ул. Примерная, д. 1, Москва, 101000" '
+                '(улица, дом, город, индекс).'
+            )
+        return address

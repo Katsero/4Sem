@@ -31,4 +31,8 @@ urlpatterns = [
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(next_page='workshop:home'), name='logout'),
     path('accounts/register/', views.RegisterView.as_view(), name='register'),
+
+    path('review/create/', views.create_review, name='create_review'),
+    path('favorite/<str:content_type>/<int:object_id>/', views.toggle_favorite, name='toggle_favorite'),
+    path('profile/favorites/', views.FavoriteListView.as_view(), name='favorite_list'),
 ]

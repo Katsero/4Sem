@@ -13,7 +13,6 @@ router.register(r'cart', views.CartViewSet, basename='cart')
 router.register(r'orders', views.OrderViewSet, basename='order')
 router.register(r'favorites', views.FavoriteViewSet, basename='favorite')
 router.register(r'reviews', views.ReviewViewSet, basename='review')
-router.register(r'site-settings', views.SiteSettingsViewSet, basename='site-settings')
 
 urlpatterns = [
     path('', include(router.urls)),
