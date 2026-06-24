@@ -98,7 +98,7 @@ class Service(models.Model):
             raise ValidationError({'duration_minutes': _('Длительность должна быть > 0.')})
 
     def get_formatted_price(self):
-        return f"{self.price:,.2f} ₽".replace(',', ' ')
+        return f"{self.price:,.2f} ₽".replace(',', ' ').replace('.', ',')
 
 
 class Product(models.Model):
@@ -139,7 +139,7 @@ class Product(models.Model):
             raise ValidationError({'price': _('Цена должна быть положительной.')})
 
     def get_formatted_price(self):
-        return f"{self.price:,.2f} ₽".replace(',', ' ')
+        return f"{self.price:,.2f} ₽".replace(',', ' ').replace('.', ',')
 
 
 class Appointment(models.Model):
@@ -298,13 +298,8 @@ class Order(models.Model):
         verbose_name=_('Адрес доставки'),
         validators=[
             RegexValidator(
-                regex=r'^[а-яА-ЯёЁa-zA-Z\s\-\.,]+,\s*д\.\s*\d+[а-яА-Яa-zA-Z]?'
-                      r'(,\s*кв\.\s*\d+)?,\s*[а-яА-ЯёЁa-zA-Z\s\-]+,\s*\d{6}$',
-                message=_(
-                    'Адрес должен быть в формате: '
-                    '"Город, ул. Примерная, д. 1, кв. 10, Москва, 101000" '
-                    '(улица, дом, город, индекс).'
-                ),
+                regex=r'^[а-яА-ЯёЁa-zA-Z\s\-\.,]+,\s*д\.\s*\d+[а-яА-Яa-zA-Z]?(?:,\s*кв\.\s*\d+)?,\s*[а-яА-ЯёЁa-zA-Z\s\-]+,\s*\d{6}$',
+                message=_('Адрес должен быть в формате: "ул. Примерная, д. 1, Москва, 101000".'),
             )
         ],
     )

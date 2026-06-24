@@ -193,13 +193,6 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['user', 'total_amount', 'status']
 
-    def validate(self, attrs):
-        instance = Order(**attrs)
-        if self.instance:
-            instance.pk = self.instance.pk
-        instance.clean()
-        return attrs
-
 
 class FavoriteSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source='service.name', read_only=True, default=None)

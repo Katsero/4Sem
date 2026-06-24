@@ -39,7 +39,7 @@ class ModelValidationTests(TestCase):
         """Тест 1: Валидация Order — сумма заказа не может быть ≤ 0."""
         order = Order(
             user=self.user,
-            address='Москва, ул. Ленина, д. 1, кв. 10, 101000',
+            address='ул. Ленина, д. 1, Москва, 101000',
             phone='+79991234567',
             total_amount=-100,
         )
@@ -245,7 +245,7 @@ class APITests(APITestCase):
             quantity=1,
         )
         response = self.client.post('/api/orders/', {
-            'address': 'Москва, ул. Ленина, д. 1, кв. 10, 101000',
+            'address': 'ул. Ленина, д. 1, Москва, 101000',
             'phone': '+79991234567',
             'payment_method': 'card',
         }, format='json')
@@ -327,7 +327,7 @@ class APITests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         order = Order.objects.create(
             user=self.user,
-            address='Москва, ул. Ленина, д. 1, кв. 10, 101000',
+            address='ул. Ленина, д. 1, Москва, 101000',
             phone='+79991234567',
             total_amount=5000,
             status='new',
