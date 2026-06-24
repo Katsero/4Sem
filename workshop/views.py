@@ -2,6 +2,8 @@ from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.views.generic import TemplateView, ListView, DetailView, View, CreateView
 from django.contrib import messages
 
@@ -82,6 +84,16 @@ class UserViewSet(viewsets.ModelViewSet):
         user.is_active = True
         user.save()
         return Response({'status': 'unblocked'})
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def change_role(self, request, pk=None):
+        user = self.get_object()
+        new_role = request.data.get('role')
+        if new_role not in dict(User.ROLE_CHOICES):
+            return Response({'error': 'Недопустимая роль.'}, status=400)
+        user.role = new_role
+        user.save(update_fields=['role'])
+        return Response(UserAdminSerializer(user, context={'request': request}).data)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -569,8 +581,6 @@ def create_review(request):
 
         return redirect(redirect_url)
     return redirect('workshop:home')
-
-from django.contrib.auth.decorators import login_required
 
 
 @login_required

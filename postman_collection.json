@@ -1,0 +1,501 @@
+{
+  "info": {
+    "name": "Tuning Atelier API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Public Endpoints",
+      "item": [
+        {
+          "name": "Get Services List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/services/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "services", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Services with Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/services/?min_price=10000&max_price=30000",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "services", ""],
+              "query": [
+                {"key": "min_price", "value": "10000"},
+                {"key": "max_price", "value": "30000"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/products/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "products", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Products with Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/products/?min_price=1000&max_price=50000&manufacturer=Bosch",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "products", ""],
+              "query": [
+                {"key": "min_price", "value": "1000"},
+                {"key": "max_price", "value": "50000"},
+                {"key": "manufacturer", "value": "Bosch"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Approved Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/reviews/?is_approved=true",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "reviews", ""],
+              "query": [
+                {"key": "is_approved", "value": "true"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password1\": \"TestPass123!\",\n  \"password2\": \"TestPass123!\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"User\",\n  \"phone\": \"+79991234567\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/users/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "users", ""]
+            }
+          }
+        },
+        {
+          "name": "Login (Get Token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"client1\",\n  \"password\": \"testpass123\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api-auth/login/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api-auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/users/me/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "users", "me", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart (Requires Auth)",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/cart/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "cart", ""]
+            }
+          }
+        },
+        {
+          "name": "Add to Cart",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product\": 1,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/cart/add/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "cart", "add", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Cart Item",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/cart/update/1/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "cart", "update", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/cart/clear/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "cart", "clear", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders (Requires Auth)",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"ул. Ленина, д. 1, Москва, 101000\",\n  \"phone\": \"+79991234567\",\n  \"payment_method\": \"card\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/orders/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "orders", ""]
+            }
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/orders/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "orders", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments (Requires Auth)",
+      "item": [
+        {
+          "name": "Create Appointment",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service\": 1,\n  \"appointment_datetime\": \"2026-06-27T15:00:00Z\",\n  \"note\": \"Хочу на утро\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/appointments/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "appointments", ""]
+            }
+          }
+        },
+        {
+          "name": "Get My Appointments",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/appointments/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "appointments", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews (Requires Auth)",
+      "item": [
+        {
+          "name": "Create Review for Service",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_type\": \"service\",\n  \"service\": 1,\n  \"rating\": 5,\n  \"text\": \"Отличная услуга! Рекомендую.\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/reviews/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "reviews", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Review for Product",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "client1"},
+                {"key": "password", "value": "testpass123"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_type\": \"product\",\n  \"product\": 1,\n  \"rating\": 4,\n  \"text\": \"Хороший товар, качество на высоте.\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/reviews/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "reviews", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Endpoints",
+      "item": [
+        {
+          "name": "Change Order Status (Admin)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "admin"},
+                {"key": "password", "value": "your_admin_password"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/orders/1/change_status/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "orders", "1", "change_status", ""]
+            }
+          }
+        },
+        {
+          "name": "Approve Review (Admin)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "admin"},
+                {"key": "password", "value": "your_admin_password"}
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/reviews/1/approve/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "reviews", "1", "approve", ""]
+            }
+          }
+        },
+        {
+          "name": "Block User (Admin)",
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "admin"},
+                {"key": "password", "value": "your_admin_password"}
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/users/1/block/",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "8000",
+              "path": ["api", "users", "1", "block", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
